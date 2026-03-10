@@ -10,15 +10,14 @@ import argparse
 import sys
 from pathlib import Path
 
-try:
-    from colorama import init
-except ModuleNotFoundError:
-    def init(*_args, **_kwargs):
-        return None
-
 from mprecursive.banner import render_banner
 from mprecursive.converters.markdown_pdf import MarkdownToPDFConverter
 from mprecursive.scanner import scan_files
+
+
+CONVERTER_REGISTRY = {
+    "pandoc": MarkdownToPDFConverter,
+}
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -44,14 +43,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="Directory name to ignore (repeatable)",
     )
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logs")
-    parser.add_argument("--engine", default="pandoc", choices=["pandoc"], help="Conversion engine")
+    parser.add_argument(
+        "--engine",
+        default="pandoc",
+        choices=sorted(CONVERTER_REGISTRY.keys()),
+        help="Conversion engine",
+    )
     parser.add_argument("--pdf-engine", default="xelatex", help="Pandoc PDF engine")
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     """Run MPRecursive CLI."""
-    init(autoreset=True)
     print(render_banner())
 
     parser = build_parser()
@@ -70,7 +73,8 @@ def main(argv: list[str] | None = None) -> int:
         print("Error: no supported files found in the provided directory.", file=sys.stderr)
         return 1
 
-    converter = MarkdownToPDFConverter(pdf_engine=args.pdf_engine)
+    converter_class = CONVERTER_REGISTRY[args.engine]
+    converter = converter_class(pdf_engine=args.pdf_engine)
     try:
         converter.convert(
             files=files,

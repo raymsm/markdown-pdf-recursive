@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -25,9 +25,7 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Environment :: Console",
 ]
-dependencies = [
-  "colorama>=0.4.6"
-]
+dependencies = []
 
 [project.urls]
 Homepage = "https://github.com/raymsm/markdown-pdf-recursive"
