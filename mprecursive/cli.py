@@ -82,7 +82,10 @@ def main(argv: list[str] | None = None) -> int:
             toc=args.toc,
             include_images=args.include_images,
             verbose=args.verbose,
+<<<<<<< codex/create-markdown-pdf-recursive-cli-tool
             source_root=root,
+=======
+>>>>>>> main
         )
     except (RuntimeError, PermissionError, OSError, ValueError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
