@@ -19,6 +19,8 @@ A professional, modular CLI for recursive document conversion workflows, startin
 - Automatic Obsidian syntax normalization:
   - `[[wikilink]]` → `wikilink`
   - `![[image.png]]` → `![](image.png)`
+- Strips leading YAML front matter per file before merge to avoid malformed metadata crashes
+- Resolves local image paths against each source note directory for more reliable Pandoc resource loading
 - Table of contents support via Pandoc
 - Modular converter architecture for future pipelines
 - Colorful startup banner with developer attribution
@@ -106,3 +108,10 @@ MPRecursive ./knowledge-base --ignore .git --ignore archive --verbose -o kb.pdf
 ## License
 
 MIT License.
+
+
+## Common Pandoc/Termux issues
+
+- **YAML parse errors**: MPRecursive strips leading front matter from each file before merge, which avoids failures caused by malformed note properties.
+- **`pdflatex`/`xelatex` not found**: install a TeX engine or run with another installed engine (for example `--pdf-engine=tectonic` if available).
+- **Missing images**: ensure image links are relative to each note location or absolute valid paths.
