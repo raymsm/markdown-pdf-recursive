@@ -12,7 +12,7 @@ from pathlib import Path
 
 from mprecursive.banner import render_banner
 from mprecursive.converters.markdown_pdf import MarkdownToPDFConverter
-from mprecursive.scanner import scan_files
+from mprecursive.scanner import SUPPORTED_EXTENSIONS, scan_files
 
 
 CONVERTER_REGISTRY = {
@@ -26,7 +26,7 @@ def build_parser() -> argparse.ArgumentParser:
         prog="MPRecursive",
         description="Recursively convert markdown files into a single PDF.",
     )
-    parser.add_argument("path", help="Root directory to scan")
+    parser.add_argument("path", help="Root directory or markdown file to scan")
     parser.add_argument("-o", "--output", default="output.pdf", help="Output PDF file")
     parser.add_argument("--toc", action="store_true", help="Include table of contents")
     parser.add_argument(
@@ -53,6 +53,28 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def resolve_input_files(path: Path, ignore_dirs: list[str], sort_by: str) -> tuple[list[Path], Path]:
+    """Resolve files from an input path and return files with source root.
+
+    Supports either a directory (recursive scan) or a single markdown file.
+    """
+    if not path.exists():
+        raise FileNotFoundError(f"Path does not exist: {path}")
+
+    if path.is_file():
+        if path.suffix.lower() not in SUPPORTED_EXTENSIONS:
+            raise ValueError(
+                "Input file is not a supported markdown type. "
+                f"Supported: {', '.join(sorted(SUPPORTED_EXTENSIONS))}"
+            )
+        return [path], path.parent
+
+    if path.is_dir():
+        return scan_files(root=path, ignore_dirs=ignore_dirs, sort_by=sort_by), path
+
+    raise ValueError(f"Unsupported input path: {path}")
+
+
 def main(argv: list[str] | None = None) -> int:
     """Run MPRecursive CLI."""
     print(render_banner())
@@ -64,7 +86,7 @@ def main(argv: list[str] | None = None) -> int:
     output = Path(args.output)
 
     try:
-        files = scan_files(root=root, ignore_dirs=args.ignore, sort_by=args.sort)
+        files, source_root = resolve_input_files(path=root, ignore_dirs=args.ignore, sort_by=args.sort)
     except (FileNotFoundError, NotADirectoryError, PermissionError, ValueError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
@@ -82,10 +104,9 @@ def main(argv: list[str] | None = None) -> int:
             toc=args.toc,
             include_images=args.include_images,
             verbose=args.verbose,
-<<<<<<< codex/create-markdown-pdf-recursive-cli-tool
+            source_root=source_root,
             source_root=root,
-=======
->>>>>>> main
+ main
         )
     except (RuntimeError, PermissionError, OSError, ValueError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
