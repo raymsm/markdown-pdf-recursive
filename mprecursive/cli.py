@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 
 from mprecursive.banner import render_banner
-from mprecursive.converters.markdown_pdf import MarkdownToPDFConverter
+from mprecursive.converters.markdown_pdf import ALLOWED_PDF_ENGINES, MarkdownToPDFConverter
 from mprecursive.scanner import SUPPORTED_EXTENSIONS, scan_files
 
 
@@ -49,7 +49,12 @@ def build_parser() -> argparse.ArgumentParser:
         choices=sorted(CONVERTER_REGISTRY.keys()),
         help="Conversion engine",
     )
-    parser.add_argument("--pdf-engine", default="xelatex", help="Pandoc PDF engine")
+    parser.add_argument(
+        "--pdf-engine",
+        default="xelatex",
+        choices=list(ALLOWED_PDF_ENGINES),
+        help="Pandoc PDF engine",
+    )
     return parser
 
 
@@ -58,21 +63,26 @@ def resolve_input_files(path: Path, ignore_dirs: list[str], sort_by: str) -> tup
 
     Supports either a directory (recursive scan) or a single markdown file.
     """
-    if not path.exists():
-        raise FileNotFoundError(f"Path does not exist: {path}")
+    normalized_path = path.expanduser().resolve()
 
-    if path.is_file():
-        if path.suffix.lower() not in SUPPORTED_EXTENSIONS:
+    if not normalized_path.exists():
+        raise FileNotFoundError(f"Path does not exist: {normalized_path}")
+
+    if normalized_path.is_file():
+        if normalized_path.suffix.lower() not in SUPPORTED_EXTENSIONS:
             raise ValueError(
                 "Input file is not a supported markdown type. "
                 f"Supported: {', '.join(sorted(SUPPORTED_EXTENSIONS))}"
             )
-        return [path], path.parent
+        return [normalized_path], normalized_path.parent
 
-    if path.is_dir():
-        return scan_files(root=path, ignore_dirs=ignore_dirs, sort_by=sort_by), path
+    if normalized_path.is_dir():
+        return (
+            scan_files(root=normalized_path, ignore_dirs=ignore_dirs, sort_by=sort_by),
+            normalized_path,
+        )
 
-    raise ValueError(f"Unsupported input path: {path}")
+    raise ValueError(f"Unsupported input path: {normalized_path}")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -83,7 +93,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     root = Path(args.path)
-    output = Path(args.output)
+    output = Path(args.output).expanduser().resolve()
 
     try:
         files, source_root = resolve_input_files(path=root, ignore_dirs=args.ignore, sort_by=args.sort)
@@ -105,8 +115,6 @@ def main(argv: list[str] | None = None) -> int:
             include_images=args.include_images,
             verbose=args.verbose,
             source_root=source_root,
-            source_root=root,
- main
         )
     except (RuntimeError, PermissionError, OSError, ValueError) as exc:
         print(f"Error: {exc}", file=sys.stderr)

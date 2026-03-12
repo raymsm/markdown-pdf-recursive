@@ -17,12 +17,18 @@ from mprecursive.utils import ensure_command_exists
 FRONT_MATTER_START = "---"
 FRONT_MATTER_END = {"---", "..."}
 IMAGE_LINK_PATTERN = re.compile(r"!\[(.*?)\]\(([^)\s]+)(?:\s+\".*?\")?\)")
+ALLOWED_PDF_ENGINES = ("xelatex", "pdflatex", "lualatex", "tectonic")
 
 
 class MarkdownToPDFConverter:
     """Pandoc-based markdown-to-PDF conversion pipeline."""
 
     def __init__(self, pdf_engine: str = "xelatex") -> None:
+        if pdf_engine not in ALLOWED_PDF_ENGINES:
+            raise ValueError(
+                "Unsupported PDF engine. "
+                f"Allowed values: {', '.join(ALLOWED_PDF_ENGINES)}"
+            )
         self.pdf_engine = pdf_engine
 
     def convert(
