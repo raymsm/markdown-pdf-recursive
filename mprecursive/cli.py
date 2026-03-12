@@ -105,6 +105,8 @@ def main(argv: list[str] | None = None) -> int:
             include_images=args.include_images,
             verbose=args.verbose,
             source_root=source_root,
+            source_root=root,
+ main
         )
     except (RuntimeError, PermissionError, OSError, ValueError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
